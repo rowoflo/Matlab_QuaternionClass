@@ -425,11 +425,11 @@ methods (Access = public)
         
         % Check arguments for errors
         assert(numel(a) == 1,...
-            'trackable:quaternion:plus:a',...
+            'trackable:quaternion:minus:a',...
             'Input argument "a" must be a 1 x 1 "quaternion" object.')
         
         assert(isa(b,'quaternion') && numel(b) == 1,...
-            'trackable:quaternion:plus:b',...
+            'trackable:quaternion:minus:b',...
             'Input argument "b" must be a 1 x 1 "quaternion" object.')
         
         a1 = a.a; b1 = a.b; c1 = a.c; d1 = a.d;
@@ -441,6 +441,59 @@ methods (Access = public)
         a.d = d1 - d2;
     end
     
+    function a = times(a,b)
+        % The "times" method overloads Matlab's built in "times" function for
+        % quaternions.
+        %
+        % SYNTAX:
+        %   c = a .* b
+        %
+        % INPUTS:
+        %   a - (1 x N scaler or quaternion or 3 x N vector)
+        %       First argument in product equation.
+        %
+        %   b - (1 x N scaler or quaternion or 3 x N vector)
+        %       Second argument in product equation.
+        %
+        % OUTPUTS:
+        %   c - (1 x N quaternion or 3 x N vector)
+        %       Product of equation.
+        %
+        % NOTES:
+        %   This method works for:
+        %       quaternion .* quaternion = quaternion -- elementwise Hamiltonian product
+        %       scaler .* quaternion or quaternion .* scaler = quaternion -- elementwise scaler product
+        %       quaternion * vector (3 x 1) = vector (3 x 1) -- elementwise rotational product 
+        %
+        %-----------------------------------------------------------------------
+        
+        % Check number of arguments
+        narginchk(2,2)
+        
+        % Check arguments for errors
+        assert(isa(a,'quaternion') || (isnumeric(a) && isreal(a) && isvector(a)),...
+            'trackable:quaternion:times:a',...
+            'Input argument "a" must be a real scaler, vector or "quaternion" vector object.')
+        [M,N] = size(a);
+        
+        assert((isa(b,'quaternion') && isequal(size(b),[M,N])) || (isnumeric(b) && isreal(b) && (isequal(size(b),[M,N]) || (M == 1 && isequal(size(b),[3,N])))),...
+            'trackable:quaternion:times:b',...
+            'Input argument "b" must be a %d x %d real matrix, 3 x %d matrix, or  %d x %d "quaternion" vector object.',M,N,N,M,N)
+        
+        if M == 1 && size(b,1) == 3
+            c = nan(3,N);
+            for i = 1:N
+                c(:,i) = a(i) * b(:,i);
+            end
+            a = c;
+        else
+            for i = 1:numel(b)
+                a(i) = a(i) * b(i);
+            end
+        end
+    end
+        
+    
     function a = mtimes(a,b)
         % The "mtimes" method overloads Matlab's built in "mtimes" function for
         % quaternions.
@@ -450,17 +503,20 @@ methods (Access = public)
         %
         % INPUTS:
         %   a - (1 x 1 scaler or quaternion)
-        %       An instance of the "quaternion" class.
+        %       First argument in product equation.
         %
-        %   b - (1 x 1 scaler or quaternion)
-        %       An instance of the "quaternion" class.
+        %   b - (1 x 1 scaler or quaternion or 3 x 1 vector)
+        %       Second argument in product equation.
         %
         % OUTPUTS:
-        %   c - (1 x 1 quaternion)
-        %       An instance of the "quaternion" class that is the
-        %       product of "a" multiplied by "b".
+        %   c - (1 x 1 quaternion or 3 x 1 vector)
+        %       Product of equation.
         %
         % NOTES:
+        %   This method works for:
+        %       quaternion * quaternion = quaternion -- Hamiltonian product
+        %       scaler * quaternion or quaternion * scaler = quaternion -- scaler product
+        %       quaternion * vector (3 x 1) = vector (3 x 1) -- rotational product 
         %
         %-----------------------------------------------------------------------
 
@@ -468,13 +524,13 @@ methods (Access = public)
         narginchk(2,2)
         
         % Check arguments for errors
-        assert(numel(a) == 1 && (isa(a,'quaternion') || (isnumeric(a) && isreal(a))),...
-            'trackable:quaternion:plus:a',...
+        assert((isa(a,'quaternion') && numel(a) == 1) || (isnumeric(a) && isreal(a) && numel(a) == 1),...
+            'trackable:quaternion:mtimes:a',...
             'Input argument "a" must be a real scaler or 1 x 1 "quaternion" object.')
         
-        assert(numel(b) == 1 && (isa(b,'quaternion') || (isnumeric(b) && isreal(b))),...
-            'trackable:quaternion:plus:b',...
-            'Input argument "b" must be a real scaler or 1 x 1 "quaternion" object.')
+        assert((isa(b,'quaternion') && numel(b) == 1) || (isnumeric(b) && isreal(b) && (numel(b) == 1 || isequal(size(b),[3,1]))),...
+            'trackable:quaternion:mtimes:b',...
+            'Input argument "b" must be a real scaler, 3 x 1 vector, or 1 x 1 "quaternion" object.')
         
         if isa(a,'quaternion') 
             a1 = a.a; b1 = a.b; c1 = a.c; d1 = a.d;
@@ -490,10 +546,24 @@ methods (Access = public)
             a.c = a1*c2 - b1*d2 + c1*a2 + d1*b2;
             a.d = a1*d2 + b1*c2 - c1*b2 + d1*a2;
         elseif isa(a,'quaternion')
-            a.a = a1*b;
-            a.b = b1*b;
-            a.c = c1*b;
-            a.d = d1*b;
+            if numel(b) == 1
+                a.a = a1*b;
+                a.b = b1*b;
+                a.c = c1*b;
+                a.d = d1*b;
+            else
+                a2 = 0; b2 = b(1); c2 = b(2); d2 = b(3);
+                a3 = a1*a2 - b1*b2 - c1*c2 - d1*d2;
+                b3 = a1*b2 + b1*a2 + c1*d2 - d1*c2;
+                c3 = a1*c2 - b1*d2 + c1*a2 + d1*b2;
+                d3 = a1*d2 + b1*c2 - c1*b2 + d1*a2;
+                
+                a4 = a.a; b4 = -a.b; c4 = -a.c; d4 = -a.d;
+                a = nan(3,1);
+                a(1) = a3*b4 + b3*a4 + c3*d4 - d3*c4;
+                a(2) = a3*c4 - b3*d4 + c3*a4 + d3*b4;
+                a(3) = a3*d4 + b3*c4 - c3*b4 + d3*a4;
+            end
         else
             b.a = a2*a;
             b.b = b2*a;
@@ -544,7 +614,7 @@ methods (Access = public)
         a.d = a.d/b;
     end
     
-    function a = conj(a)
+    function q = conj(q)
         % The "conj" method overloads Matlab's built in "conj" function for
         % quaternions.
         %
@@ -552,12 +622,12 @@ methods (Access = public)
         %   b = conj(a)
         %
         % INPUTS:
-        %   a - (1 x 1 quaternion)
+        %   a - (M x N x ... quaternion)
         %       An instance of the "quaternion" class.
         %
         % OUTPUTS:
-        %   b - (1 x 1 quaternion)
-        %       An instance of the "quaternion" class that is the
+        %   b - (M x N x ... quaternion)
+        %       An instance of the "quaternion" class that is elementwise the
         %       conjucate of "a".
         %
         % NOTES:
@@ -567,16 +637,50 @@ methods (Access = public)
         % Check number of arguments
         narginchk(1,1)
         
-        % Check arguments for errors
-        assert(numel(a) == 1,...
-            'trackable:quaternion:conj:a',...
-            'Input argument "a" must be a 1 x 1 "quaternion" object.')
+        % Elementwise conjucate
+        for i = 1:numel(q)
+            q(i).b = -q(i).b;
+            q(i).c = -q(i).c;
+            q(i).d = -q(i).d;
+        end
+    end
+    
+    function r = ctranspose(q)
+        % The "conj" method overloads Matlab's built in "ctranspose" function for
+        % quaternions.
+        %
+        % SYNTAX:
+        %   b = a'
+        %
+        % INPUTS:
+        %   a - (M x N quaternion)
+        %       An instance of the "quaternion" class.
+        %
+        % OUTPUTS:
+        %   b - (M x N quaternion)
+        %       An instance of the "quaternion" class that is the conjucate
+        %       transpose of "a".
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+
+        % Check number of arguments
+        narginchk(1,1)
         
-        a1 = a.a; b1 = a.b; c1 = a.c; d1 = a.d;
-        a.a = a1;
-        a.b = -b1;
-        a.c = -c1;
-        a.d = -d1;
+        % Check arguments for errors
+        assert(numel(size(q)) == 2,...
+            'trackable:quaternion:norm:a',...
+            'Input argument "a" must have dimension <= 2.')
+        
+        % Conjucate transpose
+        [M,N] = size(q);
+        r = reshape(q,N,M);
+        for i = 1:M
+            for j = 1:N
+                r(j,i) = conj(q(i,j));
+            end
+        end
     end
     
     function value = norm(a)
@@ -603,7 +707,7 @@ methods (Access = public)
         
         % Check arguments for errors
         assert(numel(a) == 1,...
-            'trackable:quaternion:conj:a',...
+            'trackable:quaternion:norm:a',...
             'Input argument "a" must be a 1 x 1 "quaternion" object.')
         
         a1 = a.a; b1 = a.b; c1 = a.c; d1 = a.d;
@@ -666,7 +770,7 @@ methods (Access = public)
         
         % Check arguments for errors
         assert(numel(a) == 1,...
-            'trackable:quaternion:unit:a',...
+            'trackable:quaternion:inv:a',...
             'Input argument "a" must be a 1 x 1 "quaternion" object.')
         
         b = conj(a)/norm(a)^2;
@@ -696,7 +800,7 @@ methods (Access = public)
         
         % Check arguments for errors
         assert(numel(a) == 1,...
-            'trackable:quaternion:unit:a',...
+            'trackable:quaternion:rot:a',...
             'Input argument "a" must be a 1 x 1 "quaternion" object.')
         
         R = quaternion.quat2rot(a.a,a.b,a.c,a.d);
@@ -726,7 +830,7 @@ methods (Access = public)
         
         % Check arguments for errors
         assert(numel(a) == 1,...
-            'trackable:quaternion:unit:a',...
+            'trackable:quaternion:euler:a',...
             'Input argument "a" must be a 1 x 1 "quaternion" object.')
         
         R = quaternion.quat2euler(a.a,a.b,a.c,a.d);
@@ -763,6 +867,10 @@ methods (Access = public)
             'Input argument "a" must be a 1 x 1 "quaternion" object.')
         
         [e,theta] = quaternion.quat2axis(a.a,a.b,a.c,a.d);
+        if e(3) < 0
+            e = -e;
+            theta = -theta;
+        end
     end
     
     function logic = isnan(x)
