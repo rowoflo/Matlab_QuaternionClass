@@ -40,7 +40,7 @@ methods
         %   quaternionObj = quaternion(quat)
         %   quaternionObj = quaternion(rot)
         %   quaternionObj = quaternion(euler)
-        %   quaternionObj = quaternion(axis,theta)
+        %   quaternionObj = quaternion(theta,axis)
         %
         % INPUTS:
         %   quat - (1 x 4 number)
@@ -179,64 +179,87 @@ methods (Access = public)
         % Check number of arguments
         narginchk(1,1)
         
+        windowSize = get(0,'CommandWindowSize');
+        charPerLine = windowSize(1);
+        
+        switch get(0,'Format')
+            case 'short'
+                space = '   ';
+                flag = '%.4f';
+                charPerCol = 39;
+                
+            case 'long'
+                space = '  ';
+                flag = '%.15f';
+                
+            case 'shortE'
+                space = '   ';
+                flag = '%.4e';
+                
+            case 'longE'
+                space = '      ';
+                flag = '%.15e';
+                
+            case 'shortG'
+                space = '   ';
+                flag = '%.4g';
+                
+            case 'longG'
+                space = '  ';
+                flag = '%.15g';
+                
+            otherwise
+                error('trackable:quaternion:disp:format',...
+                    'Format type "%s" has not been implemented yet for the quaternion class.',get(0,'Format'));
+        end
+        
+        colPerLine = floor(charPerLine/charPerCol);
+        
         dim = length(size(x));
         if dim <= 2
-            d = size(x);
-            for i = 1:d(1)
-                for j = 1:d(2)
-                    switch get(0,'Format')
-                        case 'short'
-                            space = '  ';
-                            flag = '%.4f';
-                            
-                        case 'long'
-                            space = '  ';
-                            flag = '%.15f';
-                            
-                        case 'shortE'
-                            space = '   ';
-                            flag = '%.4e';
-                            
-                        case 'longE'
-                            space = '      ';
-                            flag = '%.15e';
-                            
-                        case 'shortG'
-                            space = '   ';
-                            flag = '%.4g';
-                            
-                        case 'longG'
-                            space = '  ';
-                            flag = '%.15g';
-                            
-                        otherwise
-                            error('trackable:quaternion:disp:format',...
-                                'Format type "%s" has not been implemented yet for the quaternion class.',get(0,'Format'));
-                    end
-                    
-                    fprintf([space flag],x(i,j).a);
-                    if x(i,j).b == 0; x(i,j).b = 0; end
-                    if x(i,j).b >= 0
-                        fprintf([' + ' flag],x(i,j).b);
+            rowMax = size(x,1);
+            colMax = size(x,2);
+            
+            blockMax = ceil(colMax/colPerLine);
+            
+            colEnd = 0;
+            for b = 1:blockMax
+                colStart = colEnd + 1;
+                colEnd = min(colStart + colPerLine - 1,colMax);
+                if blockMax ~= 1
+                    if colStart ~= colEnd
+                        fprintf('  Columns %d through %d\n\n',colStart,colEnd);
                     else
-                        fprintf([' - ' flag],abs(x(i,j).b));
+                        fprintf('  Column %d\n\n',colStart);
                     end
-                    if x(i,j).c == 0; x(i,j).c = 0; end
-                    if x(i,j).c >= 0
-                        fprintf([' + ' flag],x(i,j).c);
-                    else
-                        fprintf([' - ' flag],abs(x(i,j).c));
+                end
+                
+                for r = 1:rowMax
+                    for c = colStart:colEnd
+                        fprintf([space flag],x(r,c).a);
+                        if x(r,c).b == 0; x(r,c).b = 0; end
+                        if x(r,c).b >= 0
+                            fprintf([' + ' flag 'i'],x(r,c).b);
+                        else
+                            fprintf([' - ' flag 'i'],abs(x(r,c).b));
+                        end
+                        if x(r,c).c == 0; x(r,c).c = 0; end
+                        if x(r,c).c >= 0
+                            fprintf([' + ' flag 'j'],x(r,c).c);
+                        else
+                            fprintf([' - ' flag 'j'],abs(x(r,c).c));
+                        end
+                        if x(r,c).d == 0; x(r,c).d = 0; end
+                        if x(r,c).d >= 0
+                            fprintf([' + ' flag 'k'],x(r,c).d);
+                        else
+                            fprintf([' - ' flag 'k'],abs(x(r,c).d));
+                        end
                     end
-                    if x(i,j).d == 0; x(i,j).d = 0; end
-                    if x(i,j).d >= 0
-                        fprintf([' + ' flag],x(i,j).d);
-                    else
-                        fprintf([' - ' flag],abs(x(i,j).d));
-                    end
+                    fprintf('\n');
                 end
                 fprintf('\n');
             end
-            fprintf('\n');
         else
             error('trackable:quaternion:disp:dim',...
                 'Functionality to display quaternions with dimension greater than two has not been created yet.')
@@ -841,15 +864,16 @@ methods (Access = public)
         % representation of a rotation that is equal to the quaternion "a".
         %
         % SYNTAX:
-        %   R = rot(a)
+        %   [e,theta] = axis(a)
         %
         % INPUTS:
         %   a - (1 x 1 quaternion)
         %       An instance of the "quaternion" class.
         %
-        % OUTPUTS:
+        % OUTPUTS
         %   e - (3 x 1 number)
-        %       Axis of rotation.
+        %       Axis of rotation. Magnitude of axis equals angle of
+        %       rotation.
         %
         %   theta - (1 x 1 number)
         %       Angle of rotation.
@@ -1122,7 +1146,7 @@ methods (Static = true, Access = public)
         %
         % INPUTS:
         %   e - (3 x 1 number)
-        %       Axis or rotation.
+        %       Axis of rotation.
         %
         %   theta - (1 x 1 number) [norm(e)]
         %       Angle in radians. If not given it is set to the norm of
@@ -1179,7 +1203,7 @@ methods (Static = true, Access = public)
         %
         % OUTPUTS:
         %   e - (3 x 1 number)
-        %       Axis of rotation.
+        %       Axis of rotation. Magnitude equals angle of rotation.
         %
         %   theta - (1 x 1 number)
         %       Angle of rotation.
@@ -1223,6 +1247,13 @@ methods (Static = true, Access = public)
         
         e = [b;c;d]/norm([b;c;d]);
         theta = 2*acos(a);
+        if theta > pi
+            theta = theta - 2*pi;
+        elseif theta < -pi
+            theta = theta + 2*pi;
+        end
+        e = theta*e;
+        
     end
     
 end
