@@ -40,7 +40,7 @@ methods
         %   quaternionObj = quaternion(quat)
         %   quaternionObj = quaternion(rot)
         %   quaternionObj = quaternion(euler)
-        %   quaternionObj = quaternion(theta,axis)
+        %   quaternionObj = quaternion(axis,angle)
         %
         % INPUTS:
         %   quat - (1 x 4 number)
@@ -88,15 +88,15 @@ methods
                     case 9 % Rotation Matrix
                         arg1 = reshape(arg1(:),3,3);
                         q = quaternion.rot2quat(arg1);
-                        a = q(1); b = q(2); c = q(3); d = q(4); 
+                        a = q.a; b = q.b; c = q.c; d = q.d; 
                         
                     case 3 % Euler Angles or Axis
-                        if size(arg1,2) == 1 % Euler Angles
+                        if size(arg1,1) == 1 % Euler Angles
                             q = quaternion.euler2quat(arg1);
                         else % Axis
                             q = quaternion.axis2quat(arg1);
                         end
-                        a = q(1); b = q(2); c = q(3); d = q(4);
+                        a = q.a; b = q.b; c = q.c; d = q.d;
                         
                     otherwise
                         error('trackable:quaternion:arg1',...
@@ -105,7 +105,7 @@ methods
                     
             case 2
                 q = quaternion.axis2quat(arg1,arg2);
-                a = q(1); b = q(2); c = q(3); d = q(4);
+                a = q.a; b = q.b; c = q.c; d = q.d;
         end
         
         % Assign properties
@@ -962,15 +962,37 @@ methods (Static = true, Access = public)
             warning('trackable:quat2rot:rot',...
                 'Input argument "rot" is not very close to SO(3). Results may be incorrect!!!')
         end
-        t = trace(rot);
-        r = sqrt(1+t);
-        s = 0.5/r;
-        a = 0.5*r;
-        b = (rot(3,2)-rot(2,3))*s;
-        c = (rot(1,3)-rot(3,1))*s;
-        d = (rot(2,1)-rot(1,2))*s;
         
-        q = [a b c d];
+        % This method didn't work for all cases, e.g [-1 0 0;0 0 1;0 1 0]'
+        % t = trace(rot);
+        % r = sqrt(1+t);
+        % s = 0.5/r;
+        % a = 0.5*r;
+        % b = (rot(3,2)-rot(2,3))*s;
+        % c = (rot(1,3)-rot(3,1))*s;
+        % d = (rot(2,1)-rot(1,2))*s;
+        % 
+        % q = [a b c d];
+
+        % This method first convert the rotation matrix into axis-angle
+        % representation and the converts that to a quaternion
+        t = trace(rot);
+        [V,D] = eigs(rot);
+        [~,I] = max(real(diag(D)));
+        u = V(:,I); % axis unit vector
+        theta = acos((t - 1)/2); % angle
+        if all(u < 0)
+            u = -1*u;
+            theta = wrapToPi(theta - 2*pi);
+        end
+        
+        a = cos(theta/2);
+        b = u(1)*sin(theta/2);
+        c = u(2)*sin(theta/2);
+        d = u(3)*sin(theta/2);
+        
+        q = quaternion([a b c d]);
+        
     end
     
     function R = quat2rot(a,b,c,d)
@@ -1070,7 +1092,7 @@ methods (Static = true, Access = public)
         c = cos(phi/2)*sin(theta/2)*cos(psi/2) + sin(phi/2)*cos(theta/2)*sin(psi/2);
         d = cos(phi/2)*cos(theta/2)*sin(psi/2) - sin(phi/2)*sin(theta/2)*cos(psi/2);
         
-        q = [a b c d];
+        q = quaternion([a b c d]);
     end
     
     function euler = quat2euler(a,b,c,d)
@@ -1130,7 +1152,7 @@ methods (Static = true, Access = public)
         end
         
         phi = atan2(2*(a*b+c*d),1-2*(b^2+c^2));
-        theta = asin(2*(a*b-d*c));
+        theta = asin(2*(a*c-d*b));
         psi = atan2(2*(a*d+b*c),1-2*(c^2+d^2));
         
         euler = [phi theta psi];
@@ -1183,7 +1205,7 @@ methods (Static = true, Access = public)
         c = e(2)*sin(theta/2);
         d = e(3)*sin(theta/2);
         
-        q = [a b c d];
+        q = quaternion([a b c d]);
     end
     
     function [e,theta] = quat2axis(a,b,c,d)
