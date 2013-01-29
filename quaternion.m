@@ -377,8 +377,8 @@ methods (Access = public)
     end
     
     function a = plus(a,b)
-        % The "plus" method overloads Matlab's built in "plus" function for
-        % quaternions.
+        % The "plus" method overloads Matlab's built in "plus" (i.e. + )
+        % function for quaternions.
         %
         % SYNTAX:
         %   c = a + b
@@ -421,8 +421,8 @@ methods (Access = public)
     end
     
     function a = minus(a,b)
-        % The "minus" method overloads Matlab's built in "minus" function for
-        % quaternions.
+        % The "minus" method overloads Matlab's built in "minus" (i.e. - )
+        % function for quaternions.
         %
         % SYNTAX:
         %   c = a - b
@@ -465,8 +465,8 @@ methods (Access = public)
     end
     
     function a = times(a,b)
-        % The "times" method overloads Matlab's built in "times" function for
-        % quaternions.
+        % The "times" method overloads Matlab's built in "times" (i.e. .* )
+        % function for quaternions.
         %
         % SYNTAX:
         %   c = a .* b
@@ -516,10 +516,9 @@ methods (Access = public)
         end
     end
         
-    
     function a = mtimes(a,b)
-        % The "mtimes" method overloads Matlab's built in "mtimes" function for
-        % quaternions.
+        % The "mtimes" method overloads Matlab's built in "mtimes" (i.e. *
+        % ) function for quaternions.
         %
         % SYNTAX:
         %   c = a * b
@@ -597,8 +596,8 @@ methods (Access = public)
     end
     
     function a = mrdivide(a,b)
-        % The "mrdivide" method overloads Matlab's built in "mrdivide" function for
-        % quaternions.
+        % The "mrdivide" method overloads Matlab's built in "mrdivide"
+        % (i.e. / ) function for quaternions.
         %
         % SYNTAX:
         %   c = a / b
@@ -669,8 +668,8 @@ methods (Access = public)
     end
     
     function r = ctranspose(q)
-        % The "conj" method overloads Matlab's built in "ctranspose" function for
-        % quaternions.
+        % The "conj" method overloads Matlab's built in "ctranspose" (i.e.
+        % ' )function for quaternions.
         %
         % SYNTAX:
         %   b = a'
@@ -797,6 +796,82 @@ methods (Access = public)
             'Input argument "a" must be a 1 x 1 "quaternion" object.')
         
         b = conj(a)/norm(a)^2;
+    end
+    
+    function TF = eq(a,b)
+        % The "eq" method overloads Matlab's built in "eq" (i.e. == )
+        % function for quaternions.
+        %
+        % SYNTAX:
+        %   a == b
+        %
+        % INPUTS:
+        %   a - (1 x 1 quaternion)
+        %       An instance of the "quaternion" class.
+        %
+        %   b - (1 x 1 quaternion)
+        %       An instance of the "quaternion" class.
+        %
+        % OUTPUTS:
+        %   TF - (1 x 1 logical)
+        %       True if all of the components of the quaternions "a" and "b"
+        %       equal each other.
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+
+        % Check number of arguments
+        narginchk(2,2)
+        
+        % Check arguments for errors
+        assert(numel(a) == 1,...
+            'trackable:quaternion:eq:a',...
+            'Input argument "a" must be a 1 x 1 "quaternion" object.')
+        
+        assert(numel(b) == 1,...
+            'trackable:quaternion:eq:b',...
+            'Input argument "b" must be a 1 x 1 "quaternion" object.')
+        
+        TF = (a.a == b.a & a.b == b.b & a.c == b.c & a.d == b.d);
+    end
+    
+    function TF = ne(a,b)
+        % The "ne" method overloads Matlab's built in "ne" (i.e. ~= )
+        % function for quaternions.
+        %
+        % SYNTAX:
+        %   a ~= b
+        %
+        % INPUTS:
+        %   a - (1 x 1 quaternion)
+        %       An instance of the "quaternion" class.
+        %
+        %   b - (1 x 1 quaternion)
+        %       An instance of the "quaternion" class.
+        %
+        % OUTPUTS:
+        %   TF - (1 x 1 logical)
+        %       True if any of the components of the quaternions "a" and "b"
+        %       do not equal each other.
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+
+        % Check number of arguments
+        narginchk(2,2)
+        
+        % Check arguments for errors
+        assert(numel(a) == 1,...
+            'trackable:quaternion:eq:a',...
+            'Input argument "a" must be a 1 x 1 "quaternion" object.')
+        
+        assert(numel(b) == 1,...
+            'trackable:quaternion:eq:b',...
+            'Input argument "b" must be a 1 x 1 "quaternion" object.')
+        
+        TF = (a.a ~= b.a | a.b ~= b.b | a.c ~= b.c | a.d ~= b.d);
     end
     
     function R = rot(a)
@@ -976,11 +1051,22 @@ methods (Static = true, Access = public)
 
         % This method first convert the rotation matrix into axis-angle
         % representation and the converts that to a quaternion
-        t = trace(rot);
+        % http://en.wikipedia.org/wiki/Rotation_matrix#Conversion_from_and_to_axis-angle
+        
         [V,D] = eigs(rot);
         [~,I] = max(real(diag(D)));
         u = V(:,I); % axis unit vector
-        theta = acos((t - 1)/2); % angle
+        v = null(u'); v = v(:,1); % find a vector perpendicular to u.
+        w = cross(u,v); % find another vector perpendicular to both with known right-hand orientation
+        if (rot*v)'*w ~= 0
+            theta = sign((rot*v)'*w)*acos((rot*v)'*v);
+        else
+            theta = acos((rot*v)'*v);
+        end
+        
+        % t = trace(rot); % This method is ambiguous to the sign of the angle
+        % theta = acos((t - 1)/2);
+        
         if all(u < 0)
             u = -1*u;
             theta = wrapToPi(theta - 2*pi);
