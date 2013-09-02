@@ -1354,7 +1354,7 @@ methods (Static = true, Access = public)
         end
         
         e = [b;c;d]/norm([b;c;d]);
-        theta = 2*acos(a);
+        theta = 2*real(acos(a));
         if theta > pi
             theta = theta - 2*pi;
         elseif theta < -pi
