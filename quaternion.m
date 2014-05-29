@@ -904,20 +904,20 @@ methods (Access = public)
         R = quaternion.quat2rot(a.a,a.b,a.c,a.d);
     end
     
-    function R = euler(a)
+    function E = euler(a)
         % The "euler" method outputs the corresponding Euler angles
         % associated with the quaternion "a".
         %
         % SYNTAX:
-        %   R = rot(a)
+        %   E = euler(a)
         %
         % INPUTS:
         %   a - (1 x 1 quaternion)
         %       An instance of the "quaternion" class.
         %
         % OUTPUTS:
-        %   R - (3 x 3 number)
-        %       A standard rotation matrix that is in SO(3).
+        %   E - (1 x 3 number) 
+        %       Euler angles [phi; theta; psi] for the given quaterion.
         %
         % NOTES:
         %
@@ -931,7 +931,7 @@ methods (Access = public)
             'quaternion:euler:a',...
             'Input argument "a" must be a 1 x 1 "quaternion" object.')
         
-        R = quaternion.quat2euler(a.a,a.b,a.c,a.d);
+        E = quaternion.quat2euler(a.a,a.b,a.c,a.d);
     end
     
     function [e,theta] = axis(a)
