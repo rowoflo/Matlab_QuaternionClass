@@ -1069,7 +1069,8 @@ methods (Static = true, Access = public)
         
         if all(u < 0)
             u = -1*u;
-            theta = wrapToPi(theta - 2*pi);
+%             theta = wrapToPi(theta - 2*pi); % <-- I don't this is wrong
+            theta = wrapToPi(-theta);
         end
         
         a = cos(theta/2);
