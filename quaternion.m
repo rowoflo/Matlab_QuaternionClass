@@ -203,10 +203,12 @@ methods (Access = public)
             case 'shortG'
                 space = '   ';
                 flag = '%.4g';
+                charPerCol = 39;
                 
             case 'longG'
                 space = '  ';
                 flag = '%.15g';
+                charPerCol = 39;
                 
             otherwise
                 error('quaternion:disp:format',...
