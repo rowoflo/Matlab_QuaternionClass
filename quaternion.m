@@ -32,7 +32,9 @@ properties (GetAccess = public, SetAccess = private, Hidden = true)
 end
 
 properties (Dependent = true)
-    quat
+    real % (1 x 1 number) Real part of quaternion.
+    imag % (1 x 3 number) Imaginary part of quaternion.
+    quat % (1 x 4 number) Quaternion as a vector.
 end
 
 %% Constructor -----------------------------------------------------------------
@@ -124,21 +126,111 @@ end
 
 %% Property Methods ------------------------------------------------------------
 methods
-    function quaternionObj = set.quat(quaternionObj,quat)
-        % Overloaded assignment operator function for the "prop1" property.
+    function quaternionObj = set.real(quaternionObj,real)
+        % Overloaded assignment operator function for the "real" property.
         %
         % SYNTAX:
-        %   quaternionObj.prop1 = prop1
+        %   quaternionObj.real = real
         %
         % INPUT:
-        %   prop1 - (1 x 1 real number)
+        %   real - (1 x 1 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        assert(isnumeric(real) && isreal(real) && numel(real) == 1,...
+            'quaternion:set:real',...
+            'Property "real" must be set to a 1 x 1 real number.')
+
+        quaternionObj.r = real;
+    end
+    
+    function real = get.real(quaternionObj)
+        % Overloaded query operator function for the "real" property.
+        %
+        % SYNTAX:
+        %	  real = quaternionObj.real
+        %
+        % OUTPUT:
+        %   real - (1 x 1 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+
+        d = size(quaternionObj);
+        if d(2) == 1
+            d = d(1);
+        end
+        n = numel(quaternionObj);
+        real = zeros([d 1]);
+        for cnt = 1:n
+            real(ind2sub(d,cnt)) = quaternionObj(cnt).r;
+        end
+    end
+    
+    function quaternionObj = set.imag(quaternionObj,imag)
+        % Overloaded assignment operator function for the "imag" property.
+        %
+        % SYNTAX:
+        %   quaternionObj.imag = imag
+        %
+        % INPUT:
+        %   imag - (1 x 3 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        assert(isnumeric(imag) && isreal(imag) && numel(imag) == 3,...
+            'quaternion:set:imag',...
+            'Property "imag" must be set to a 1 x 3 real number.')
+
+        quaternionObj.i = imag(1);
+        quaternionObj.j = imag(2);
+        quaternionObj.k = imag(3);
+    end
+    
+    function imag = get.imag(quaternionObj)
+        % Overloaded query operator function for the "imag" property.
+        %
+        % SYNTAX:
+        %	  imag = quaternionObj.imag
+        %
+        % OUTPUT:
+        %   imag - (1 x 3 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+
+        d = size(quaternionObj);
+        if d(2) == 1
+            d = d(1);
+        end
+        n = numel(quaternionObj);
+        imag = zeros([d 3]);
+        for cnt = 1:n
+            imag(ind2sub(d,cnt+1)) = quaternionObj(cnt).i;
+            imag(ind2sub(d,cnt+n)) = quaternionObj(cnt).j;
+            imag(ind2sub(d,cnt+2*n)) = quaternionObj(cnt).k;
+        end
+    end
+    
+    function quaternionObj = set.quat(quaternionObj,quat)
+        % Overloaded assignment operator function for the "quat" property.
+        %
+        % SYNTAX:
+        %   quaternionObj.quat = quat
+        %
+        % INPUT:
+        %   quat - (1 x 4 real number)
         %
         % NOTES:
         %
         %-----------------------------------------------------------------------
         assert(isnumeric(quat) && isreal(quat) && numel(quat) == 4,...
             'quaternion:set:quat',...
-            'Property "quat" must be set to a 4 x 1 real number.')
+            'Property "quat" must be set to a 1 x 4 real number.')
 
         quaternionObj.r = quat(1);
         quaternionObj.i = quat(2);
@@ -283,77 +375,6 @@ methods (Access = public)
         else
             error('quaternion:disp:dim',...
                 'Functionality to display quaternions with dimension greater than two has not been created yet.')
-        end
-    end
-    
-    function scaler = real(x)
-        % The "real" method overloads Matlab's built in "real" function for
-        % quaternions.
-        %
-        % SYNTAX:
-        %   real(x)
-        %
-        % INPUTS:
-        %   x - ( M x N x ... quaternion)
-        %       An instance of the "quaternion" class.
-        %
-        % OUTPUTS:
-        %   scaler - (M x N x ... real number)
-        %       A maxtrix of the real parts of the quaternion "x" that is
-        %       the same size as "x".
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-
-        % Check number of arguments
-        narginchk(1,1)
-        
-        d = size(x);
-        n = numel(x);
-        scaler = zeros(d);
-        for i = 1:n
-            scaler(i) = x(i).r;
-        end
-    end
-    
-    function vector = imag(x)
-        % The "imag" method overloads Matlab's built in "imag" function for
-        % quaternions.
-        %
-        % SYNTAX:
-        %   imag(x)
-        %
-        % INPUTS:
-        %   x - ( M x N x ... quaternion)
-        %       An instance of the "quaternion" class.
-        %
-        % OUTPUTS:
-        %   vector - (M x N x ... x 3 real number)
-        %       A matrix of the imaginary parts of the quaternion "x" that
-        %       is the same size as "x" plus one more dimension of size 3
-        %       that contains the each imaginary coeffienct to the i, j, k
-        %       component. To recover a the imaginary components of a
-        %       specific element (i,j) of "x" use the following: >>
-        %       squeeze(vector(i,j,:))'
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-
-        % Check number of arguments
-        narginchk(1,1)
-        
-        d = size(x);
-        if d(2) == 1
-            d = d(1);
-        end
-        n = numel(x);
-        vector = zeros([d 3]);
-        for i = 1:n
-            vector(ind2sub(d,i)) = x(i).i;
-            vector(ind2sub(d,i+n)) = x(i).j;
-            vector(ind2sub(d,i+2*n)) = x(i).k;
         end
     end
     
