@@ -108,7 +108,7 @@ methods
                         else % Axis
                             q = quaternion.axis2quat(arg1);
                         end
-                        r = q.r; i = q.i; j = q.k; k = q.k;
+                        r = q.r; i = q.i; j = q.j; k = q.k;
                         
                     otherwise
                         error('quaternion:arg1',...
@@ -133,17 +133,6 @@ end
 %% Property Methods ------------------------------------------------------------
 methods
     function quaternionObj = set.real(quaternionObj,real)
-        % Overloaded assignment operator function for the "real" property.
-        %
-        % SYNTAX:
-        %   quaternionObj.real = real
-        %
-        % INPUT:
-        %   real - (1 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
         assert(isnumeric(real) && isreal(real) && numel(real) == 1,...
             'quaternion:set:real',...
             'Property "real" must be set to a 1 x 1 real number.')
@@ -152,33 +141,10 @@ methods
     end
     
     function real = get.real(quaternionObj)
-        % Overloaded query operator function for the "real" property.
-        %
-        % SYNTAX:
-        %	  real = quaternionObj.real
-        %
-        % OUTPUT:
-        %   real - (1 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-
         real = quaternionObj.r;
     end
     
     function quaternionObj = set.imag(quaternionObj,imag)
-        % Overloaded assignment operator function for the "imag" property.
-        %
-        % SYNTAX:
-        %   quaternionObj.imag = imag
-        %
-        % INPUT:
-        %   imag - (3 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
         assert(isnumeric(imag) && isreal(imag) && numel(imag) == 3,...
             'quaternion:set:imag',...
             'Property "imag" must be set to a 3 x 1 real number.')
@@ -189,35 +155,12 @@ methods
     end
     
     function imag = get.imag(quaternionObj)
-        % Overloaded query operator function for the "imag" property.
-        %
-        % SYNTAX:
-        %	  imag = quaternionObj.imag
-        %
-        % OUTPUT:
-        %   imag - (3 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-
         imag(1,1) = quaternionObj.i;
         imag(2,1) = quaternionObj.j;
         imag(3,1) = quaternionObj.k;
     end
     
     function quaternionObj = set.quat(quaternionObj,quat)
-        % Overloaded assignment operator function for the "quat" property.
-        %
-        % SYNTAX:
-        %   quaternionObj.quat = quat
-        %
-        % INPUT:
-        %   quat - (4 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
         assert(isnumeric(quat) && isreal(quat) && numel(quat) == 4,...
             'quaternion:set:quat',...
             'Property "quat" must be set to a 4 x 1 real number.')
@@ -229,18 +172,6 @@ methods
     end
     
     function quat = get.quat(quaternionObj)
-        % Overloaded query operator function for the "quat" property.
-        %
-        % SYNTAX:
-        %	  quat = quaternionObj.quat
-        %
-        % OUTPUT:
-        %   quat - (4 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-
         quat(1,1) = quaternionObj.r;
         quat(2,1) = quaternionObj.i;
         quat(3,1) = quaternionObj.j;
@@ -248,206 +179,62 @@ methods
     end
     
     function quaternionObj = set.rot(quaternionObj,rot)
-        % Overloaded assignment operator function for the "rot" property.
-        %
-        % SYNTAX:
-        %   quaternionObj.rot = rot
-        %
-        % INPUT:
-        %   rot - (3 x 3 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-        
         q = quaternion.rot2quat(rot);
         quaternionObj.quat = q.quat;
     end
     
     function rot = get.rot(quaternionObj)
-        % Overloaded query operator function for the "rot" property.
-        %
-        % SYNTAX:
-        %	  rot = quaternionObj.rot
-        %
-        % OUTPUT:
-        %   rot - (3 x 3 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-
         rot = quaternion.quat2rot(quaternionObj.quat);
     end
     
     function quaternionObj = set.euler(quaternionObj,euler)
-        % Overloaded assignment operator function for the "euler" property.
-        %
-        % SYNTAX:
-        %   quaternionObj.euler = euler
-        %
-        % INPUT:
-        %   euler - (3 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-        
         q = quaternion.euler2quat(euler);
         quaternionObj.quat = q.quat;
     end
     
     function euler = get.euler(quaternionObj)
-        % Overloaded query operator function for the "euler" property.
-        %
-        % SYNTAX:
-        %	  euler = quaternionObj.euler
-        %
-        % OUTPUT:
-        %   euler - (3 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-
         euler = quaternion.quat2euler(quaternionObj.quat);
     end
     
     function quaternionObj = set.roll(quaternionObj,roll)
-        % Overloaded assignment operator function for the "roll" property.
-        %
-        % SYNTAX:
-        %   quaternionObj.roll = roll
-        %
-        % INPUT:
-        %   roll - (1 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-        
         e = quaternionObj.euler;
         q = quaternion.euler2quat([roll e(2) e(3)]);
         quaternionObj.quat = q.quat;
     end
     
     function roll = get.roll(quaternionObj)
-        % Overloaded query operator function for the "roll" property.
-        %
-        % SYNTAX:
-        %	  roll = quaternionObj.roll
-        %
-        % OUTPUT:
-        %   roll - (1 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-        
         e = quaternionObj.euler;
         roll = e(1);
     end
     
     function quaternionObj = set.pitch(quaternionObj,pitch)
-        % Overloaded assignment operator function for the "pitch" property.
-        %
-        % SYNTAX:
-        %   quaternionObj.pitch = pitch
-        %
-        % INPUT:
-        %   pitch - (1 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-        
         e = quaternionObj.euler;
         q = quaternion.euler2quat([e(1) pitch e(3)]);
         quaternionObj.quat = q.quat;
     end
     
     function pitch = get.pitch(quaternionObj)
-        % Overloaded query operator function for the "pitch" property.
-        %
-        % SYNTAX:
-        %	  pitch = quaternionObj.pitch
-        %
-        % OUTPUT:
-        %   pitch - (1 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-        
         e = quaternionObj.euler;
         pitch = e(2);
     end
     
     function quaternionObj = set.yaw(quaternionObj,yaw)
-        % Overloaded assignment operator function for the "yaw" property.
-        %
-        % SYNTAX:
-        %   quaternionObj.yaw = yaw
-        %
-        % INPUT:
-        %   yaw - (1 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-        
         e = quaternionObj.euler;
         q = quaternion.euler2quat([e(1) e(2) yaw]);
         quaternionObj.quat = q.quat;
     end
     
     function yaw = get.yaw(quaternionObj)
-        % Overloaded query operator function for the "yaw" property.
-        %
-        % SYNTAX:
-        %	  yaw = quaternionObj.yaw
-        %
-        % OUTPUT:
-        %   yaw - (1 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-        
         e = quaternionObj.euler;
         yaw = e(3);
     end
     
     function quaternionObj = set.axis(quaternionObj,axis)
-        % Overloaded assignment operator function for the "axis" property.
-        %
-        % SYNTAX:
-        %   quaternionObj.axis = axis
-        %
-        % INPUT:
-        %   axis - (3 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-        
         q = quaternion.axis2quat(axis);
         quaternionObj.quat = q.quat;
     end
     
-    function axis = get.axis(quaternionObj)
-        % Overloaded query operator function for the "axis" property.
-        %
-        % SYNTAX:
-        %	  axis = quaternionObj.axis
-        %
-        % OUTPUT:
-        %   axis - (3 x 1 real number)
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-        
+    function axis = get.axis(quaternionObj)       
         axis = quaternion.quat2axis(quaternionObj.quat);
     end
     
@@ -1307,7 +1094,7 @@ methods (Static = true, Access = public)
         %       Quaterion components: a + b*i + c*j + d*k.
         %
         % OUTPUTS:
-        %   euler - (1 x 3 number) 
+        %   euler - (3 x 1 number) 
         %       Euler angles [phi; theta; psi] for the given quaterion.
         %
         % NOTES:
@@ -1354,7 +1141,7 @@ methods (Static = true, Access = public)
         theta = asin(2*(a*c-d*b));
         psi = atan2(2*(a*d+b*c),1-2*(c^2+d^2));
         
-        euler = [phi theta psi];
+        euler = [phi theta psi]';
     end
     
     function q = axis2quat(e,theta)
