@@ -1466,14 +1466,19 @@ methods (Static = true, Access = public)
                 'Incorrect number of input arugments.')
         end
         
-        e = [b;c;d]/norm([b;c;d]);
-        theta = 2*real(acos(a));
-        if theta > pi
-            theta = theta - 2*pi;
-        elseif theta < -pi
-            theta = theta + 2*pi;
+        if norm([b;c;d]) == 0
+            e = [1;0;0];
+            theta = 0;
+        else
+            e = [b;c;d]/norm([b;c;d]);
+            theta = 2*real(acos(a));
+            if theta > pi
+                theta = theta - 2*pi;
+            elseif theta < -pi
+                theta = theta + 2*pi;
+            end
+            e = theta*e;
         end
-        e = theta*e;
         
     end
     
