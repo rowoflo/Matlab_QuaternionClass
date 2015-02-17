@@ -25,10 +25,10 @@ classdef quaternion
 
 %% Properties ------------------------------------------------------------------
 properties (GetAccess = public, SetAccess = private, Hidden = true)
-    a % (1 x 1 number) Magnitude of real part of quaternion.
-    b % (1 x 1 number) Magnitude of i part of quaternion.
-    c % (1 x 1 number) Magnitude of j part of quaternion.
-    d % (1 x 1 number) Magnitdue of k part of quaternion.
+    r % (1 x 1 number) Magnitude of real part of quaternion.
+    i % (1 x 1 number) Magnitude of i part of quaternion.
+    j % (1 x 1 number) Magnitude of j part of quaternion.
+    k % (1 x 1 number) Magnitdue of k part of quaternion.
 end
 
 properties (Dependent = true)
@@ -78,7 +78,7 @@ methods
         
         switch nargin
             case 0 % Default
-                a = 1; b = 0; c = 0; d = 0;
+                r = 1; i = 0; j = 0; k = 0; %#ok<*PROP>
             case 1 % Quaternion Vector, Rotation Matrix, or Euler Angles
                 assert(isnumeric(arg1) && isreal(arg1),...
                     'quaternion:arg1',...
@@ -87,12 +87,12 @@ methods
                 switch numel(arg1)
                     case 4 % Quaternion
                         arg1 = arg1(:)';
-                        a = arg1(1); b = arg1(2); c = arg1(3); d = arg1(4);
+                        r = arg1(1); i = arg1(2); j = arg1(3); k = arg1(4);
                         
                     case 9 % Rotation Matrix
                         arg1 = reshape(arg1(:),3,3);
                         q = quaternion.rot2quat(arg1);
-                        a = q.a; b = q.b; c = q.c; d = q.d; 
+                        r = q.r; i = q.i; j = q.j; d = q.k; 
                         
                     case 3 % Euler Angles or Axis
                         if size(arg1,1) == 1 % Euler Angles
@@ -100,7 +100,7 @@ methods
                         else % Axis
                             q = quaternion.axis2quat(arg1);
                         end
-                        a = q.a; b = q.b; c = q.c; d = q.d;
+                        r = q.r; i = q.i; j = q.k; k = q.k;
                         
                     otherwise
                         error('quaternion:arg1',...
@@ -109,14 +109,14 @@ methods
                     
             case 2
                 q = quaternion.axis2quat(arg1,arg2);
-                a = q.a; b = q.b; c = q.c; d = q.d;
+                r = q.r; i = q.i; j = q.j; k = q.k;
         end
         
         % Assign properties
-        quaternionObj.a = a;
-        quaternionObj.b = b;
-        quaternionObj.c = c;
-        quaternionObj.d = d;
+        quaternionObj.r = r;
+        quaternionObj.i = i;
+        quaternionObj.j = j;
+        quaternionObj.k = k;
         
     end
 end
@@ -140,10 +140,10 @@ methods
             'quaternion:set:quat',...
             'Property "quat" must be set to a 4 x 1 real number.')
 
-        quaternionObj.a = quat(1);
-        quaternionObj.b = quat(2);
-        quaternionObj.c = quat(3);
-        quaternionObj.d = quat(4);
+        quaternionObj.r = quat(1);
+        quaternionObj.i = quat(2);
+        quaternionObj.j = quat(3);
+        quaternionObj.k = quat(4);
     end
     
     function quat = get.quat(quaternionObj)
@@ -165,11 +165,11 @@ methods
         end
         n = numel(quaternionObj);
         quat = zeros([d 4]);
-        for i = 1:n
-            quat(ind2sub(d,i)) = quaternionObj(i).a;
-            quat(ind2sub(d,i+n)) = quaternionObj(i).b;
-            quat(ind2sub(d,i+2*n)) = quaternionObj(i).c;
-            quat(ind2sub(d,i+3*n)) = quaternionObj(i).d;
+        for cnt = 1:n
+            quat(ind2sub(d,cnt)) = quaternionObj(cnt).r;
+            quat(ind2sub(d,cnt+n)) = quaternionObj(cnt).i;
+            quat(ind2sub(d,cnt+2*n)) = quaternionObj(cnt).j;
+            quat(ind2sub(d,cnt+3*n)) = quaternionObj(cnt).k;
         end
     end
 end
@@ -256,24 +256,24 @@ methods (Access = public)
                 
                 for r = 1:rowMax
                     for c = colStart:colEnd
-                        fprintf([space flag],x(r,c).a);
-                        if x(r,c).b == 0; x(r,c).b = 0; end
-                        if x(r,c).b >= 0
-                            fprintf([' + ' flag 'i'],x(r,c).b);
+                        fprintf([space flag],x(r,c).r);
+                        if x(r,c).i == 0; x(r,c).i = 0; end
+                        if x(r,c).i >= 0
+                            fprintf([' + ' flag 'i'],x(r,c).i);
                         else
-                            fprintf([' - ' flag 'i'],abs(x(r,c).b));
+                            fprintf([' - ' flag 'i'],abs(x(r,c).i));
                         end
-                        if x(r,c).c == 0; x(r,c).c = 0; end
-                        if x(r,c).c >= 0
-                            fprintf([' + ' flag 'j'],x(r,c).c);
+                        if x(r,c).j == 0; x(r,c).j = 0; end
+                        if x(r,c).j >= 0
+                            fprintf([' + ' flag 'j'],x(r,c).j);
                         else
-                            fprintf([' - ' flag 'j'],abs(x(r,c).c));
+                            fprintf([' - ' flag 'j'],abs(x(r,c).j));
                         end
-                        if x(r,c).d == 0; x(r,c).d = 0; end
-                        if x(r,c).d >= 0
-                            fprintf([' + ' flag 'k'],x(r,c).d);
+                        if x(r,c).k == 0; x(r,c).k = 0; end
+                        if x(r,c).k >= 0
+                            fprintf([' + ' flag 'k'],x(r,c).k);
                         else
-                            fprintf([' - ' flag 'k'],abs(x(r,c).d));
+                            fprintf([' - ' flag 'k'],abs(x(r,c).k));
                         end
                     end
                     fprintf('\n');
@@ -313,7 +313,7 @@ methods (Access = public)
         n = numel(x);
         scaler = zeros(d);
         for i = 1:n
-            scaler(i) = x(i).a;
+            scaler(i) = x(i).r;
         end
     end
     
@@ -351,9 +351,9 @@ methods (Access = public)
         n = numel(x);
         vector = zeros([d 3]);
         for i = 1:n
-            vector(ind2sub(d,i)) = x(i).b;
-            vector(ind2sub(d,i+n)) = x(i).c;
-            vector(ind2sub(d,i+2*n)) = x(i).d;
+            vector(ind2sub(d,i)) = x(i).i;
+            vector(ind2sub(d,i+n)) = x(i).j;
+            vector(ind2sub(d,i+2*n)) = x(i).k;
         end
     end
     
@@ -392,13 +392,13 @@ methods (Access = public)
             'quaternion:plus:b',...
             'Input argument "b" must be a 1 x 1 "quaternion" object.')
         
-        a1 = a.a; b1 = a.b; c1 = a.c; d1 = a.d;
-        a2 = b.a; b2 = b.b; c2 = b.c; d2 = b.d;
+        a1 = a.r; b1 = a.i; c1 = a.j; d1 = a.k;
+        a2 = b.r; b2 = b.i; c2 = b.k; d2 = b.k;
         
-        a.a = a1 + a2;
-        a.b = b1 + b2;
-        a.c = c1 + c2;
-        a.d = d1 + d2;
+        a.r = a1 + a2;
+        a.i = b1 + b2;
+        a.j = c1 + c2;
+        a.k = d1 + d2;
     end
     
     function a = minus(a,b)
@@ -436,13 +436,13 @@ methods (Access = public)
             'quaternion:minus:b',...
             'Input argument "b" must be a 1 x 1 "quaternion" object.')
         
-        a1 = a.a; b1 = a.b; c1 = a.c; d1 = a.d;
-        a2 = b.a; b2 = b.b; c2 = b.c; d2 = b.d;
+        a1 = a.r; b1 = a.i; c1 = a.j; d1 = a.k;
+        a2 = b.r; b2 = b.k; c2 = b.j; d2 = b.k;
         
-        a.a = a1 - a2;
-        a.b = b1 - b2;
-        a.c = c1 - c2;
-        a.d = d1 - d2;
+        a.r = a1 - a2;
+        a.i = b1 - b2;
+        a.j = c1 - c2;
+        a.k = d1 - d2;
     end
     
     function a = times(a,b)
@@ -536,42 +536,42 @@ methods (Access = public)
             'Input argument "b" must be a real scaler, 3 x 1 vector, or 1 x 1 "quaternion" object.')
         
         if isa(a,'quaternion') 
-            a1 = a.a; b1 = a.b; c1 = a.c; d1 = a.d;
+            r1 = a.r; i1 = a.i; j1 = a.j; k1 = a.k;
         end
             
         if isa(b,'quaternion')
-            a2 = b.a; b2 = b.b; c2 = b.c; d2 = b.d;
+            r2 = b.r; i2 = b.i; j2 = b.j; k2 = b.k;
         end
             
         if isa(a,'quaternion') && isa(b,'quaternion')
-            a.a = a1*a2 - b1*b2 - c1*c2 - d1*d2;
-            a.b = a1*b2 + b1*a2 + c1*d2 - d1*c2;
-            a.c = a1*c2 - b1*d2 + c1*a2 + d1*b2;
-            a.d = a1*d2 + b1*c2 - c1*b2 + d1*a2;
+            a.r = r1*r2 - i1*i2 - j1*j2 - k1*k2;
+            a.i = r1*i2 + i1*r2 + j1*k2 - k1*j2;
+            a.j = r1*j2 - i1*k2 + j1*r2 + k1*i2;
+            a.k = r1*k2 + i1*j2 - j1*i2 + k1*r2;
         elseif isa(a,'quaternion')
             if numel(b) == 1
-                a.a = a1*b;
-                a.b = b1*b;
-                a.c = c1*b;
-                a.d = d1*b;
+                a.r = r1*b;
+                a.i = i1*b;
+                a.j = j1*b;
+                a.k = k1*b;
             else
-                a2 = 0; b2 = b(1); c2 = b(2); d2 = b(3);
-                a3 = a1*a2 - b1*b2 - c1*c2 - d1*d2;
-                b3 = a1*b2 + b1*a2 + c1*d2 - d1*c2;
-                c3 = a1*c2 - b1*d2 + c1*a2 + d1*b2;
-                d3 = a1*d2 + b1*c2 - c1*b2 + d1*a2;
+                r2 = 0; i2 = b(1); j2 = b(2); k2 = b(3);
+                a3 = r1*r2 - i1*i2 - j1*j2 - k1*k2;
+                b3 = r1*i2 + i1*r2 + j1*k2 - k1*j2;
+                c3 = r1*j2 - i1*k2 + j1*r2 + k1*i2;
+                d3 = r1*k2 + i1*j2 - j1*i2 + k1*r2;
                 
-                a4 = a.a; b4 = -a.b; c4 = -a.c; d4 = -a.d;
+                a4 = a.r; b4 = -a.i; c4 = -a.j; d4 = -a.k;
                 a = nan(3,1);
                 a(1) = a3*b4 + b3*a4 + c3*d4 - d3*c4;
                 a(2) = a3*c4 - b3*d4 + c3*a4 + d3*b4;
                 a(3) = a3*d4 + b3*c4 - c3*b4 + d3*a4;
             end
         else
-            b.a = a2*a;
-            b.b = b2*a;
-            b.c = c2*a;
-            b.d = d2*a;
+            b.r = r2*a;
+            b.i = i2*a;
+            b.j = j2*a;
+            b.k = k2*a;
             a = b;
         end  
     end
@@ -611,10 +611,10 @@ methods (Access = public)
             'quaternion:mrdivide:b',...
             'Input argument "b" must be a 1 x 1 real scaler value.')
                
-        a.a = a.a/b;
-        a.b = a.b/b;
-        a.c = a.c/b;
-        a.d = a.d/b;
+        a.r = a.r/b;
+        a.i = a.i/b;
+        a.j = a.j/b;
+        a.k = a.k/b;
     end
     
     function q = conj(q)
@@ -642,9 +642,9 @@ methods (Access = public)
         
         % Elementwise conjucate
         for i = 1:numel(q)
-            q(i).b = -q(i).b;
-            q(i).c = -q(i).c;
-            q(i).d = -q(i).d;
+            q(i).i = -q(i).i;
+            q(i).j = -q(i).j;
+            q(i).k = -q(i).k;
         end
     end
     
@@ -713,7 +713,7 @@ methods (Access = public)
             'quaternion:norm:a',...
             'Input argument "a" must be a 1 x 1 "quaternion" object.')
         
-        a1 = a.a; b1 = a.b; c1 = a.c; d1 = a.d;
+        a1 = a.r; b1 = a.i; c1 = a.j; d1 = a.k;
         value = norm([a1 b1 c1 d1]);
     end
     
@@ -814,7 +814,7 @@ methods (Access = public)
             'quaternion:eq:b',...
             'Input argument "b" must be a 1 x 1 "quaternion" object.')
         
-        TF = (a.a == b.a & a.b == b.b & a.c == b.c & a.d == b.d);
+        TF = (a.r == b.r & a.i == b.i & a.j == b.j & a.k == b.k);
     end
     
     function TF = ne(a,b)
@@ -852,7 +852,7 @@ methods (Access = public)
             'quaternion:eq:b',...
             'Input argument "b" must be a 1 x 1 "quaternion" object.')
         
-        TF = (a.a ~= b.a | a.b ~= b.b | a.c ~= b.c | a.d ~= b.d);
+        TF = (a.r ~= b.r | a.i ~= b.i | a.j ~= b.j | a.k ~= b.k);
     end
     
     function R = rot(a)
@@ -882,7 +882,7 @@ methods (Access = public)
             'quaternion:rot:a',...
             'Input argument "a" must be a 1 x 1 "quaternion" object.')
         
-        R = quaternion.quat2rot(a.a,a.b,a.c,a.d);
+        R = quaternion.quat2rot(a.r,a.i,a.j,a.k);
     end
     
     function E = euler(a)
@@ -912,7 +912,7 @@ methods (Access = public)
             'quaternion:euler:a',...
             'Input argument "a" must be a 1 x 1 "quaternion" object.')
         
-        E = quaternion.quat2euler(a.a,a.b,a.c,a.d);
+        E = quaternion.quat2euler(a.r,a.i,a.j,a.k);
     end
     
     function psi = yaw(a)
@@ -941,7 +941,7 @@ methods (Access = public)
         assert(numel(a) == 1,...
             'quaternion:euler:a',...
             'Input argument "a" must be a 1 x 1 "quaternion" object.')
-        E = quaternion.quat2euler(a.a,a.b,a.c,a.d);
+        E = quaternion.quat2euler(a.r,a.i,a.j,a.k);
         psi = E(3);
     end
     
@@ -978,7 +978,7 @@ methods (Access = public)
             'quaternion:axis:a',...
             'Input argument "a" must be a 1 x 1 "quaternion" object.')
         
-        [e,theta] = quaternion.quat2axis(a.a,a.b,a.c,a.d);
+        [e,theta] = quaternion.quat2axis(a.r,a.i,a.j,a.k);
         if e(3) < 0
             e = -e;
             theta = -theta;
@@ -1012,7 +1012,7 @@ methods (Access = public)
         n = numel(x);
         logic = zeros(d);
         for i = 1:n
-            logic(i) = any(isnan([x(i).a x(i).b x(i).c x(i).d]));
+            logic(i) = any(isnan([x(i).r x(i).i x(i).j x(i).k]));
         end
     end
 end
