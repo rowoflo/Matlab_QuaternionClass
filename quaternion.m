@@ -32,9 +32,15 @@ properties (GetAccess = public, SetAccess = private, Hidden = true)
 end
 
 properties (Dependent = true)
-    real % (1 x 1 number) Real part of quaternion.
-    imag % (1 x 3 number) Imaginary part of quaternion.
-    quat % (1 x 4 number) Quaternion as a vector.
+    real  % (1 x 1 number) Real part of quaternion.
+    imag  % (3 x 1 number) Imaginary part of quaternion.
+    quat  % (4 x 1 number) Quaternion as a vector.
+    rot   % (3 x 3 number) Closest rotation matrix from quaternion.
+    euler % (3 x 1 number) Euler angles from quaternion.
+    roll  % (1 x 1 number) Euler roll angle from quaternion.
+    pitch % (1 x 1 number) Euler pitch angle from quaternion.
+    yaw   % (1 x 1 number) Euler yaw angle from quaternion.
+    axis  % (3 x 1 number) Axis of rotation from quaternion.
 end
 
 %% Constructor -----------------------------------------------------------------
@@ -49,7 +55,7 @@ methods
         %   quaternionObj = quaternion(axis,angle)
         %
         % INPUTS:
-        %   quat - (1 x 4 number)
+        %   quat - (4 x 1 number)
         %       The new quaternion will be created with quaternion
         %       component representation.
         %
@@ -158,15 +164,7 @@ methods
         %
         %-----------------------------------------------------------------------
 
-        d = size(quaternionObj);
-        if d(2) == 1
-            d = d(1);
-        end
-        n = numel(quaternionObj);
-        real = zeros([d 1]);
-        for cnt = 1:n
-            real(ind2sub(d,cnt)) = quaternionObj(cnt).r;
-        end
+        real = quaternionObj.r;
     end
     
     function quaternionObj = set.imag(quaternionObj,imag)
@@ -176,14 +174,14 @@ methods
         %   quaternionObj.imag = imag
         %
         % INPUT:
-        %   imag - (1 x 3 real number)
+        %   imag - (3 x 1 real number)
         %
         % NOTES:
         %
         %-----------------------------------------------------------------------
         assert(isnumeric(imag) && isreal(imag) && numel(imag) == 3,...
             'quaternion:set:imag',...
-            'Property "imag" must be set to a 1 x 3 real number.')
+            'Property "imag" must be set to a 3 x 1 real number.')
 
         quaternionObj.i = imag(1);
         quaternionObj.j = imag(2);
@@ -197,23 +195,15 @@ methods
         %	  imag = quaternionObj.imag
         %
         % OUTPUT:
-        %   imag - (1 x 3 real number)
+        %   imag - (3 x 1 real number)
         %
         % NOTES:
         %
         %-----------------------------------------------------------------------
 
-        d = size(quaternionObj);
-        if d(2) == 1
-            d = d(1);
-        end
-        n = numel(quaternionObj);
-        imag = zeros([d 3]);
-        for cnt = 1:n
-            imag(ind2sub(d,cnt+1)) = quaternionObj(cnt).i;
-            imag(ind2sub(d,cnt+n)) = quaternionObj(cnt).j;
-            imag(ind2sub(d,cnt+2*n)) = quaternionObj(cnt).k;
-        end
+        imag(1,1) = quaternionObj.i;
+        imag(2,1) = quaternionObj.j;
+        imag(3,1) = quaternionObj.k;
     end
     
     function quaternionObj = set.quat(quaternionObj,quat)
@@ -223,14 +213,14 @@ methods
         %   quaternionObj.quat = quat
         %
         % INPUT:
-        %   quat - (1 x 4 real number)
+        %   quat - (4 x 1 real number)
         %
         % NOTES:
         %
         %-----------------------------------------------------------------------
         assert(isnumeric(quat) && isreal(quat) && numel(quat) == 4,...
             'quaternion:set:quat',...
-            'Property "quat" must be set to a 1 x 4 real number.')
+            'Property "quat" must be set to a 4 x 1 real number.')
 
         quaternionObj.r = quat(1);
         quaternionObj.i = quat(2);
@@ -242,28 +232,225 @@ methods
         % Overloaded query operator function for the "quat" property.
         %
         % SYNTAX:
-        %	  q = quaternionObj.quat
+        %	  quat = quaternionObj.quat
         %
         % OUTPUT:
-        %   quat - (1 x 4 real number)
+        %   quat - (4 x 1 real number)
         %
         % NOTES:
         %
         %-----------------------------------------------------------------------
 
-        d = size(quaternionObj);
-        if d(2) == 1
-            d = d(1);
-        end
-        n = numel(quaternionObj);
-        quat = zeros([d 4]);
-        for cnt = 1:n
-            quat(ind2sub(d,cnt)) = quaternionObj(cnt).r;
-            quat(ind2sub(d,cnt+n)) = quaternionObj(cnt).i;
-            quat(ind2sub(d,cnt+2*n)) = quaternionObj(cnt).j;
-            quat(ind2sub(d,cnt+3*n)) = quaternionObj(cnt).k;
-        end
+        quat(1,1) = quaternionObj.r;
+        quat(2,1) = quaternionObj.i;
+        quat(3,1) = quaternionObj.j;
+        quat(4,1) = quaternionObj.k;
     end
+    
+    function quaternionObj = set.rot(quaternionObj,rot)
+        % Overloaded assignment operator function for the "rot" property.
+        %
+        % SYNTAX:
+        %   quaternionObj.rot = rot
+        %
+        % INPUT:
+        %   rot - (3 x 3 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        
+        q = quaternion.rot2quat(rot);
+        quaternionObj.quat = q.quat;
+    end
+    
+    function rot = get.rot(quaternionObj)
+        % Overloaded query operator function for the "rot" property.
+        %
+        % SYNTAX:
+        %	  rot = quaternionObj.rot
+        %
+        % OUTPUT:
+        %   rot - (3 x 3 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+
+        rot = quaternion.quat2rot(quaternionObj.quat);
+    end
+    
+    function quaternionObj = set.euler(quaternionObj,euler)
+        % Overloaded assignment operator function for the "euler" property.
+        %
+        % SYNTAX:
+        %   quaternionObj.euler = euler
+        %
+        % INPUT:
+        %   euler - (3 x 1 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        
+        q = quaternion.euler2quat(euler);
+        quaternionObj.quat = q.quat;
+    end
+    
+    function euler = get.euler(quaternionObj)
+        % Overloaded query operator function for the "euler" property.
+        %
+        % SYNTAX:
+        %	  euler = quaternionObj.euler
+        %
+        % OUTPUT:
+        %   euler - (3 x 1 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+
+        euler = quaternion.quat2euler(quaternionObj.quat);
+    end
+    
+    function quaternionObj = set.roll(quaternionObj,roll)
+        % Overloaded assignment operator function for the "roll" property.
+        %
+        % SYNTAX:
+        %   quaternionObj.roll = roll
+        %
+        % INPUT:
+        %   roll - (1 x 1 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        
+        e = quaternionObj.euler;
+        q = quaternion.euler2quat([roll e(2) e(3)]);
+        quaternionObj.quat = q.quat;
+    end
+    
+    function roll = get.roll(quaternionObj)
+        % Overloaded query operator function for the "roll" property.
+        %
+        % SYNTAX:
+        %	  roll = quaternionObj.roll
+        %
+        % OUTPUT:
+        %   roll - (1 x 1 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        
+        e = quaternionObj.euler;
+        roll = e(1);
+    end
+    
+    function quaternionObj = set.pitch(quaternionObj,pitch)
+        % Overloaded assignment operator function for the "pitch" property.
+        %
+        % SYNTAX:
+        %   quaternionObj.pitch = pitch
+        %
+        % INPUT:
+        %   pitch - (1 x 1 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        
+        e = quaternionObj.euler;
+        q = quaternion.euler2quat([e(1) pitch e(3)]);
+        quaternionObj.quat = q.quat;
+    end
+    
+    function pitch = get.pitch(quaternionObj)
+        % Overloaded query operator function for the "pitch" property.
+        %
+        % SYNTAX:
+        %	  pitch = quaternionObj.pitch
+        %
+        % OUTPUT:
+        %   pitch - (1 x 1 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        
+        e = quaternionObj.euler;
+        pitch = e(2);
+    end
+    
+    function quaternionObj = set.yaw(quaternionObj,yaw)
+        % Overloaded assignment operator function for the "yaw" property.
+        %
+        % SYNTAX:
+        %   quaternionObj.yaw = yaw
+        %
+        % INPUT:
+        %   yaw - (1 x 1 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        
+        e = quaternionObj.euler;
+        q = quaternion.euler2quat([e(1) e(2) yaw]);
+        quaternionObj.quat = q.quat;
+    end
+    
+    function yaw = get.yaw(quaternionObj)
+        % Overloaded query operator function for the "yaw" property.
+        %
+        % SYNTAX:
+        %	  yaw = quaternionObj.yaw
+        %
+        % OUTPUT:
+        %   yaw - (1 x 1 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        
+        e = quaternionObj.euler;
+        yaw = e(3);
+    end
+    
+    function quaternionObj = set.axis(quaternionObj,axis)
+        % Overloaded assignment operator function for the "axis" property.
+        %
+        % SYNTAX:
+        %   quaternionObj.axis = axis
+        %
+        % INPUT:
+        %   axis - (3 x 1 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        
+        q = quaternion.axis2quat(axis);
+        quaternionObj.quat = q.quat;
+    end
+    
+    function axis = get.axis(quaternionObj)
+        % Overloaded query operator function for the "axis" property.
+        %
+        % SYNTAX:
+        %	  axis = quaternionObj.axis
+        %
+        % OUTPUT:
+        %   axis - (3 x 1 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        
+        axis = quaternion.quat2axis(quaternionObj.quat);
+    end
+    
 end
 %-------------------------------------------------------------------------------
 
@@ -876,136 +1063,6 @@ methods (Access = public)
         TF = (a.r ~= b.r | a.i ~= b.i | a.j ~= b.j | a.k ~= b.k);
     end
     
-    function R = rot(a)
-        % The "rot" method outputs the corresponding rotation matrix
-        % associated with the quaternion "a".
-        %
-        % SYNTAX:
-        %   R = rot(a)
-        %
-        % INPUTS:
-        %   a - (1 x 1 quaternion)
-        %       An instance of the "quaternion" class.
-        %
-        % OUTPUTS:
-        %   R - (3 x 3 number)
-        %       A standard rotation matrix that is in SO(3).
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-
-        % Check number of arguments
-        narginchk(1,1)
-        
-        % Check arguments for errors
-        assert(numel(a) == 1,...
-            'quaternion:rot:a',...
-            'Input argument "a" must be a 1 x 1 "quaternion" object.')
-        
-        R = quaternion.quat2rot(a.r,a.i,a.j,a.k);
-    end
-    
-    function E = euler(a)
-        % The "euler" method outputs the corresponding Euler angles
-        % associated with the quaternion "a".
-        %
-        % SYNTAX:
-        %   E = euler(a)
-        %
-        % INPUTS:
-        %   a - (1 x 1 quaternion)
-        %       An instance of the "quaternion" class.
-        %
-        % OUTPUTS:
-        %   E - (1 x 3 number) 
-        %       Euler angles [phi; theta; psi] for the given quaterion.
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-
-        % Check number of arguments
-        narginchk(1,1)
-        
-        % Check arguments for errors
-        assert(numel(a) == 1,...
-            'quaternion:euler:a',...
-            'Input argument "a" must be a 1 x 1 "quaternion" object.')
-        
-        E = quaternion.quat2euler(a.r,a.i,a.j,a.k);
-    end
-    
-    function psi = yaw(a)
-        % The "yaw" method outputs the corresponding yaw angle
-        % associated with the quaternion "a".
-        %
-        % SYNTAX:
-        %   E = yaw(a)
-        %
-        % INPUTS:
-        %   a - (1 x 1 quaternion)
-        %       An instance of the "quaternion" class.
-        %
-        % OUTPUTS:
-        %   psi - (1 x 1 number) 
-        %       Yaw angle for the given quaterion.
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-        
-        % Check number of arguments
-        narginchk(1,1)
-        
-        % Check arguments for errors
-        assert(numel(a) == 1,...
-            'quaternion:euler:a',...
-            'Input argument "a" must be a 1 x 1 "quaternion" object.')
-        E = quaternion.quat2euler(a.r,a.i,a.j,a.k);
-        psi = E(3);
-    end
-    
-    
-    
-    function [e,theta] = axis(a)
-        % The "axis" method outputs the corresponding Euler axis/angle
-        % representation of a rotation that is equal to the quaternion "a".
-        %
-        % SYNTAX:
-        %   [e,theta] = axis(a)
-        %
-        % INPUTS:
-        %   a - (1 x 1 quaternion)
-        %       An instance of the "quaternion" class.
-        %
-        % OUTPUTS
-        %   e - (3 x 1 number)
-        %       Axis of rotation. Magnitude of axis equals angle of
-        %       rotation.
-        %
-        %   theta - (1 x 1 number)
-        %       Angle of rotation.
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-
-        % Check number of arguments
-        narginchk(1,1)
-        
-        % Check arguments for errors
-        assert(numel(a) == 1,...
-            'quaternion:axis:a',...
-            'Input argument "a" must be a 1 x 1 "quaternion" object.')
-        
-        [e,theta] = quaternion.quat2axis(a.r,a.i,a.j,a.k);
-        if e(3) < 0
-            e = -e;
-            theta = -theta;
-        end
-    end
-    
     function logic = isnan(x)
         % The "isnan" method overloads Matlab's built in "isnan" function for
         % quaternions.
@@ -1040,8 +1097,7 @@ end
 
 methods (Static = true, Access = public)
     function q = rot2quat(R)
-        % The "rot2quat" method converts a rotation matrix to quaterion
-        % components.
+        % The "rot2quat" method converts a rotation matrix to quaterion.
         %
         % SYNTAX:
         %   q = quaternion.rot2quat(rot)
@@ -1051,8 +1107,8 @@ methods (Static = true, Access = public)
         %       A standard rotation matrix that is in SO(3).
         %
         % OUTPUTS:
-        %   q = (1 x 4 numbers)
-        %       Quaterion components: q(1) + q(2)*i + q(3)*j + q(4)*k.
+        %   q = (1 x 1 numbers)
+        %       Quaterion.
         %
         % NOTES:
         %   See http://www.cg.info.hiroshima-cu.ac.jp/~miyazaki/knowledge/teche52.html
@@ -1071,25 +1127,23 @@ methods (Static = true, Access = public)
             warning('quat2rot:rot',...
                 'Input argument "rot" is not very close to SO(3). Results may be incorrect!!!')
         end
-        
-        N = size(R,3);
 
-        R11 = squeeze(R(1,1,:))';
-        R12 = squeeze(R(1,2,:))';
-        R13 = squeeze(R(1,3,:))';
+        R11 = R(1,1,:);
+        R12 = R(1,2,:);
+        R13 = R(1,3,:);
         
-        R21 = squeeze(R(2,1,:))';
-        R22 = squeeze(R(2,2,:))';
-        R23 = squeeze(R(2,3,:))';
+        R21 = R(2,1,:);
+        R22 = R(2,2,:);
+        R23 = R(2,3,:);
         
-        R31 = squeeze(R(3,1,:))';
-        R32 = squeeze(R(3,2,:))';
-        R33 = squeeze(R(3,3,:))';
+        R31 = R(3,1,:);
+        R32 = R(3,2,:);
+        R33 = R(3,3,:);
         
-        r = 1/4*( R11 + R22 + R33 + ones(1,N));
-        i = 1/4*( R11 - R22 - R33 + ones(1,N));
-        j = 1/4*(-R11 + R22 - R33 + ones(1,N));
-        k = 1/4*(-R11 - R22 + R33 + ones(1,N));
+        r = 1/4*( R11 + R22 + R33 + 1);
+        i = 1/4*( R11 - R22 - R33 + 1);
+        j = 1/4*(-R11 + R22 - R33 + 1);
+        k = 1/4*(-R11 - R22 + R33 + 1);
         
         r(r<0) = 0;
         i(i<0) = 0;
@@ -1101,7 +1155,7 @@ methods (Static = true, Access = public)
         j = j.^(1/2);
         k = k.^(1/2);
         
-        q = nan(4,N);
+        q = nan(4,1);
         
         ind1 = (r >= i & r >= j & r >= k);
         q(1,ind1) = r(ind1);
@@ -1131,12 +1185,12 @@ methods (Static = true, Access = public)
         
         q = q ./ repmat(q_norm,4,1);
         
-        q = quaternion(q');
+        q = quaternion(q);
         
     end
     
     function R = quat2rot(a,b,c,d)
-        % The "quat2rot" method converts a converts a quaterion to a
+        % The "quat2rot" method converts a converts a quaterion to the closest 
         % rotation matrix.
         %
         % SYNTAX:
@@ -1144,7 +1198,7 @@ methods (Static = true, Access = public)
         %   R = quaternion.quat2rot(a,b,c,d)
         %
         % INPUTS:
-        %   q - (1 x 4 number)
+        %   q - (4 x 1 number)
         %       Quaterion components in vector form.
         %
         %   [a,b,c,d] - (1 x 1 numbers)
@@ -1191,25 +1245,27 @@ methods (Static = true, Access = public)
                 'Incorrect number of input arugments.')
         end
         
+        length = norm([a b c d]);
+        a = a/length; b = b/length; c = c/length; d = d/length;
+        
         R = [a^2+b^2-c^2-d^2    2*b*c-2*a*d     2*b*d+2*a*c;...
              2*b*c+2*a*d        a^2-b^2+c^2-d^2 2*c*d-2*a*b;...
              2*b*d-2*a*c        2*c*d+2*a*b     a^2-b^2-c^2+d^2];
     end
     
     function q = euler2quat(euler)
-        % The "euler2quat" method converts Euler angles to quaterion
-        % components.
+        % The "euler2quat" method converts Euler angles to quaterion.
         %
         % SYNTAX:
         %   q = quaternion.euler2quat(euler)
         %
         % INPUTS:
-        %   euler - (1 x 3 number) 
+        %   euler - (3 x 1 number) 
         %       Euler angles [phi theta psi].
         %
         % OUTPUTS:
-        %   q = (1 x 4 numbers)
-        %       Quaterion components: q(1) + q(2)*i + q(3)*j + q(4)*k.
+        %   q = (1 x 1 numbers)
+        %       Quaterion.
         %
         % NOTES:
         %   See http://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
@@ -1236,7 +1292,7 @@ methods (Static = true, Access = public)
     end
     
     function euler = quat2euler(a,b,c,d)
-        % The "quat2euler" method converts a converts a quaterion to a
+        % The "quat2euler" method converts a quaterion to the closest
         % Euler angles.
         %
         % SYNTAX:
@@ -1244,7 +1300,7 @@ methods (Static = true, Access = public)
         %   euler = quaternion.quat2euler(a,b,c,d)
         %
         % INPUTS:
-        %   q - (1 x 4 number)
+        %   q - (4 x 1 number)
         %       Quaterion components in vector form.
         %
         %   [a,b,c,d] - (1 x 1 numbers)
@@ -1291,6 +1347,9 @@ methods (Static = true, Access = public)
                 'Incorrect number of input arugments.')
         end
         
+        length = norm([a b c d]);
+        a = a/length; b = b/length; c = c/length; d = d/length;
+        
         phi = atan2(2*(a*b+c*d),1-2*(b^2+c^2));
         theta = asin(2*(a*c-d*b));
         psi = atan2(2*(a*d+b*c),1-2*(c^2+d^2));
@@ -1300,7 +1359,7 @@ methods (Static = true, Access = public)
     
     function q = axis2quat(e,theta)
         % The "axis2quat" method converts Euler axis/angle rotation
-        % representation to quaterion components.
+        % representation to quaterion.
         %
         % SYNTAX:
         %   q = quaternion.axis2quat(e)
@@ -1315,8 +1374,8 @@ methods (Static = true, Access = public)
         %       axis "e".
         %
         % OUTPUTS:
-        %   q = (1 x 4 numbers)
-        %       Quaterion components: q(1) + q(2)*i + q(3)*j + q(4)*k.
+        %   q = (1 x 1 numbers)
+        %       Quaterion.
         %
         % NOTES:
         %   See http://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
@@ -1421,28 +1480,4 @@ methods (Static = true, Access = public)
 end
 %-------------------------------------------------------------------------------
 
-%% Converting Methods ----------------------------------------------------------
-% methods
-%     function anOtherObject = otherObject
-%         % Function to convert quaternion object to a otherObject object.
-%         %
-%         % SYNTAX:
-%         %	  otherObject(quaternionObj)
-%         %
-%         % NOTES:
-%         %
-%         %-----------------------------------------------------------------------
-%         
-% 
-%     end
-% 
-% end
-%-------------------------------------------------------------------------------
-
-%% Methods in separte files ----------------------------------------------------
-% methods (Access = public)
-%     quaternionObj = someMethod(quaternionObj,arg1)
-% end
-%-------------------------------------------------------------------------------
-    
 end
