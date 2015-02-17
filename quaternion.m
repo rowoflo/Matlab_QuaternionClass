@@ -31,6 +31,10 @@ properties (GetAccess = public, SetAccess = private, Hidden = true)
     d % (1 x 1 number) Magnitdue of k part of quaternion.
 end
 
+properties (Dependent = true)
+    quat
+end
+
 %% Constructor -----------------------------------------------------------------
 methods
     function quaternionObj = quaternion(arg1,arg2)
@@ -119,42 +123,56 @@ end
 %-------------------------------------------------------------------------------
 
 %% Property Methods ------------------------------------------------------------
-% methods
-%     function quaternionObj = set.prop1(quaternionObj,prop1)
-%         % Overloaded assignment operator function for the "prop1" property.
-%         %
-%         % SYNTAX:
-%         %   quaternionObj.prop1 = prop1
-%         %
-%         % INPUT:
-%         %   prop1 - (1 x 1 real number)
-%         %
-%         % NOTES:
-%         %
-%         %-----------------------------------------------------------------------
-%         assert(isnumeric(prop1) && isreal(prop1) && isequal(size(prop1),[1,1]),...
-%             'quaternion:set:prop1',...
-%             'Property "prop1" must be set to a 1 x 1 real number.')
-% 
-%         quaternionObj.prop1 = prop1;
-%     end
-%     
-%     function prop1 = get.prop1(quaternionObj)
-%         % Overloaded query operator function for the "prop1" property.
-%         %
-%         % SYNTAX:
-%         %	  prop1 = quaternionObj.prop1
-%         %
-%         % OUTPUT:
-%         %   prop1 - (1 x 1 real number)
-%         %
-%         % NOTES:
-%         %
-%         %-----------------------------------------------------------------------
-% 
-%         prop1 = quaternionObj.prop1;
-%     end
-% end
+methods
+    function quaternionObj = set.quat(quaternionObj,quat)
+        % Overloaded assignment operator function for the "prop1" property.
+        %
+        % SYNTAX:
+        %   quaternionObj.prop1 = prop1
+        %
+        % INPUT:
+        %   prop1 - (1 x 1 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        assert(isnumeric(quat) && isreal(quat) && numel(quat) == 4,...
+            'quaternion:set:quat',...
+            'Property "quat" must be set to a 4 x 1 real number.')
+
+        quaternionObj.a = quat(1);
+        quaternionObj.b = quat(2);
+        quaternionObj.c = quat(3);
+        quaternionObj.d = quat(4);
+    end
+    
+    function quat = get.quat(quaternionObj)
+        % Overloaded query operator function for the "quat" property.
+        %
+        % SYNTAX:
+        %	  q = quaternionObj.quat
+        %
+        % OUTPUT:
+        %   quat - (1 x 4 real number)
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+
+        d = size(quaternionObj);
+        if d(2) == 1
+            d = d(1);
+        end
+        n = numel(quaternionObj);
+        quat = zeros([d 4]);
+        for i = 1:n
+            quat(ind2sub(d,i)) = quaternionObj(i).a;
+            quat(ind2sub(d,i+n)) = quaternionObj(i).b;
+            quat(ind2sub(d,i+2*n)) = quaternionObj(i).c;
+            quat(ind2sub(d,i+3*n)) = quaternionObj(i).d;
+        end
+    end
+end
 %-------------------------------------------------------------------------------
 
 %% General Methods -------------------------------------------------------------
@@ -336,45 +354,6 @@ methods (Access = public)
             vector(ind2sub(d,i)) = x(i).b;
             vector(ind2sub(d,i+n)) = x(i).c;
             vector(ind2sub(d,i+2*n)) = x(i).d;
-        end
-    end
-    
-    function q = quat(x)
-        % The "quat" method outputs the components of the quaternion "x".
-        %
-        % SYNTAX:
-        %   quat(x)
-        %
-        % INPUTS:
-        %   x - ( M x N x ... quaternion)
-        %       An instance of the "quaternion" class.
-        %
-        % OUTPUTS:
-        %   q - (M x N x ... x 4 real number)
-        %       A matrix of the components of the quaternion "x" that is
-        %       the same size as "x" plus one more dimension of size 4 that
-        %       contains the each component a, b, c, d. To recover a the
-        %       components of a specific element (i,j) of "x" use the
-        %       following: >> squeeze(vector(i,j,:))'
-        %
-        % NOTES:
-        %
-        %-----------------------------------------------------------------------
-
-        % Check number of arguments
-        narginchk(1,1)
-        
-        d = size(x);
-        if d(2) == 1
-            d = d(1);
-        end
-        n = numel(x);
-        q = zeros([d 4]);
-        for i = 1:n
-            q(ind2sub(d,i)) = x(i).a;
-            q(ind2sub(d,i+n)) = x(i).b;
-            q(ind2sub(d,i+2*n)) = x(i).c;
-            q(ind2sub(d,i+3*n)) = x(i).d;
         end
     end
     
@@ -936,6 +915,38 @@ methods (Access = public)
         E = quaternion.quat2euler(a.a,a.b,a.c,a.d);
     end
     
+    function psi = yaw(a)
+        % The "yaw" method outputs the corresponding yaw angle
+        % associated with the quaternion "a".
+        %
+        % SYNTAX:
+        %   E = yaw(a)
+        %
+        % INPUTS:
+        %   a - (1 x 1 quaternion)
+        %       An instance of the "quaternion" class.
+        %
+        % OUTPUTS:
+        %   psi - (1 x 1 number) 
+        %       Yaw angle for the given quaterion.
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        
+        % Check number of arguments
+        narginchk(1,1)
+        
+        % Check arguments for errors
+        assert(numel(a) == 1,...
+            'quaternion:euler:a',...
+            'Input argument "a" must be a 1 x 1 "quaternion" object.')
+        E = quaternion.quat2euler(a.a,a.b,a.c,a.d);
+        psi = E(3);
+    end
+    
+    
+    
     function [e,theta] = axis(a)
         % The "axis" method outputs the corresponding Euler axis/angle
         % representation of a rotation that is equal to the quaternion "a".
@@ -1007,7 +1018,7 @@ methods (Access = public)
 end
 
 methods (Static = true, Access = public)
-    function q = rot2quat(rot)
+    function q = rot2quat(R)
         % The "rot2quat" method converts a rotation matrix to quaterion
         % components.
         %
@@ -1015,7 +1026,7 @@ methods (Static = true, Access = public)
         %   q = quaternion.rot2quat(rot)
         %
         % INPUTS:
-        %   rot - (3 x 3 number)
+        %   R - (3 x 3 number)
         %       A standard rotation matrix that is in SO(3).
         %
         % OUTPUTS:
@@ -1023,7 +1034,7 @@ methods (Static = true, Access = public)
         %       Quaterion components: q(1) + q(2)*i + q(3)*j + q(4)*k.
         %
         % NOTES:
-        %   See http://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
+        %   See http://www.cg.info.hiroshima-cu.ac.jp/~miyazaki/knowledge/teche52.html
         %
         %-----------------------------------------------------------------------
 
@@ -1031,56 +1042,75 @@ methods (Static = true, Access = public)
         narginchk(1,1)
         
         % Check arguments for errors
-        assert(isnumeric(rot) && isreal(rot) && isequal(size(rot),[3,3]),...
-            'quaternion:rot2quat:rot',...
-            'Input argument "rot" must be a 3 x 3 matrix of real numbers in SO(3).')
+        assert(isnumeric(R) && isreal(R) && isequal(size(R),[3,3]),...
+            'quaternion:rot2quat:R',...
+            'Input argument "R" must be a 3 x 3 matrix of real numbers in SO(3).')
         
-        if norm(rot'*rot - eye(3)) > .01
+        if norm(R'*R - eye(3)) > .01
             warning('quat2rot:rot',...
                 'Input argument "rot" is not very close to SO(3). Results may be incorrect!!!')
         end
         
-        % This method didn't work for all cases, e.g [-1 0 0;0 0 1;0 1 0]'
-        % t = trace(rot);
-        % r = sqrt(1+t);
-        % s = 0.5/r;
-        % a = 0.5*r;
-        % b = (rot(3,2)-rot(2,3))*s;
-        % c = (rot(1,3)-rot(3,1))*s;
-        % d = (rot(2,1)-rot(1,2))*s;
-        % 
-        % q = [a b c d];
+        N = size(R,3);
 
-        % This method first convert the rotation matrix into axis-angle
-        % representation and the converts that to a quaternion
-        % http://en.wikipedia.org/wiki/Rotation_matrix#Conversion_from_and_to_axis-angle
+        R11 = squeeze(R(1,1,:))';
+        R12 = squeeze(R(1,2,:))';
+        R13 = squeeze(R(1,3,:))';
         
-        [V,D] = eigs(rot);
-        [~,I] = max(real(diag(D)));
-        u = V(:,I); % axis unit vector
-        v = null(u'); v = v(:,1); % find a vector perpendicular to u.
-        w = cross(u,v); % find another vector perpendicular to both with known right-hand orientation
-        if (rot*v)'*w ~= 0
-            theta = sign((rot*v)'*w)*acos((rot*v)'*v);
-        else
-            theta = acos((rot*v)'*v);
-        end
+        R21 = squeeze(R(2,1,:))';
+        R22 = squeeze(R(2,2,:))';
+        R23 = squeeze(R(2,3,:))';
         
-        % t = trace(rot); % This method is ambiguous to the sign of the angle
-        % theta = acos((t - 1)/2);
+        R31 = squeeze(R(3,1,:))';
+        R32 = squeeze(R(3,2,:))';
+        R33 = squeeze(R(3,3,:))';
         
-        if all(u < 0)
-            u = -1*u;
-%             theta = wrapToPi(theta - 2*pi); % <-- I don't this is wrong
-            theta = wrapToPi(-theta);
-        end
+        r = 1/4*( R11 + R22 + R33 + ones(1,N));
+        i = 1/4*( R11 - R22 - R33 + ones(1,N));
+        j = 1/4*(-R11 + R22 - R33 + ones(1,N));
+        k = 1/4*(-R11 - R22 + R33 + ones(1,N));
         
-        a = cos(theta/2);
-        b = u(1)*sin(theta/2);
-        c = u(2)*sin(theta/2);
-        d = u(3)*sin(theta/2);
+        r(r<0) = 0;
+        i(i<0) = 0;
+        j(j<0) = 0;
+        k(k<0) = 0;
         
-        q = quaternion([a b c d]);
+        r = r.^(1/2);
+        i = i.^(1/2);
+        j = j.^(1/2);
+        k = k.^(1/2);
+        
+        q = nan(4,N);
+        
+        ind1 = (r >= i & r >= j & r >= k);
+        q(1,ind1) = r(ind1);
+        q(2,ind1) = sign(R32(ind1) - R23(ind1)).*i(ind1);
+        q(3,ind1) = sign(R13(ind1) - R31(ind1)).*j(ind1);
+        q(4,ind1) = sign(R21(ind1) - R12(ind1)).*k(ind1);
+        
+        ind2 = (i >= r & i >= j & r >= k);
+        q(1,ind2) = sign(R32(ind2) - R23(ind2)).*r(ind2);
+        q(2,ind2) = i(ind2);
+        q(3,ind2) = sign(R21(ind2) + R12(ind2)).*j(ind2);
+        q(4,ind2) = sign(R13(ind2) + R31(ind2)).*k(ind2);
+        
+        ind3 = (j >= r & j >= i & j >= k);
+        q(1,ind3) = sign(R13(ind3) - R31(ind3)).*r(ind3);
+        q(2,ind3) = sign(R21(ind3) + R12(ind3)).*i(ind3);
+        q(3,ind3) = j(ind3);
+        q(4,ind3) = sign(R32(ind3) + R23(ind3)).*k(ind3);
+        
+        ind4 = (k >= r & k >= i & k >= j);
+        q(1,ind4) = sign(R21(ind4) - R12(ind4)).*r(ind4);
+        q(2,ind4) = sign(R31(ind4) + R13(ind4)).*i(ind4);
+        q(3,ind4) = sign(R32(ind4) + R23(ind4)).*j(ind4);
+        q(4,ind4) = k(ind4);
+        
+        q_norm = sqrt(sum(q.^2,1));
+        
+        q = q ./ repmat(q_norm,4,1);
+        
+        q = quaternion(q');
         
     end
     
