@@ -100,7 +100,7 @@ methods
                     case 9 % Rotation Matrix
                         arg1 = reshape(arg1(:),3,3);
                         q = quaternion.rot2quat(arg1);
-                        r = q.r; i = q.i; j = q.j; d = q.k; 
+                        r = q.r; i = q.i; j = q.j; k = q.k; 
                         
                     case 3 % Euler Angles or Axis
                         if size(arg1,1) == 1 % Euler Angles
