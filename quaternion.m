@@ -45,16 +45,29 @@ end
 
 %% Constructor -----------------------------------------------------------------
 methods
-    function quaternionObj = quaternion(arg1,arg2)
+    function quaternionObj = quaternion(arg1,arg2,arg3,arg4)
         % Constructor function for the "quaternion" class.
         %
         % SYNTAX:
+        %   quaternionObj = quaternion(r,i,j,k)
         %   quaternionObj = quaternion(quat)
         %   quaternionObj = quaternion(rot)
         %   quaternionObj = quaternion(euler)
         %   quaternionObj = quaternion(axis,angle)
         %
         % INPUTS:
+        %   r - (1 x 1 number)
+        %       Real part of quaternion.
+        %
+        %   i - (1 x 1 number)
+        %       Imaginary i part of quaternion.
+        %
+        %   j - (1 x 1 number)
+        %       Imaginary j part of quaternion.
+        %
+        %   k - (1 x 1 number)
+        %       Imaginary k part of quaternion.
+        %
         %   quat - (4 x 1 number)
         %       The new quaternion will be created with quaternion
         %       component representation.
@@ -82,7 +95,7 @@ methods
         %-----------------------------------------------------------------------
         
         % Check number of arguments
-        narginchk(0,2)
+        narginchk(0,4)
         
         switch nargin
             case 0 % Default
@@ -118,6 +131,11 @@ methods
             case 2
                 q = quaternion.axis2quat(arg1,arg2);
                 r = q.r; i = q.i; j = q.j; k = q.k;
+            case 3
+                error('quanternion:narginchk',...
+                    'Invalid number of input arguments.')
+            case 4
+                r = arg1; i = arg2; j = arg3; k = arg4;
         end
         
         % Assign properties
