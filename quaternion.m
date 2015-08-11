@@ -589,7 +589,7 @@ methods (Access = public)
         end  
     end
     
-    function a = mrdivide(a,b)
+    function a = rdivide(a,b)
         % The "mrdivide" method overloads Matlab's built in "mrdivide"
         % (i.e. / ) function for quaternions.
         %
@@ -897,6 +897,39 @@ methods (Access = public)
         for i = 1:n
             logic(i) = any(isnan([x(i).r x(i).i x(i).j x(i).k]));
         end
+    end
+    
+    function val = sum(q,dim,~)
+        % The "sum" method overloads Matlab's built in "sum" function for
+        % quaternions.
+        %
+        % SYNTAX:
+        %   sum(q,dim)
+        %
+        % INPUTS:
+        %   q - ( M x N x ... quaternion)
+        %       An instance of the "quaternion" class.
+        %
+        % OUTPUTS:
+        %   val - ( A x B x ... quaternion)
+        %       Sum of quaternions.
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        d = size(q);
+        if prod(d) == 1
+            val = q;
+            return;
+        end
+        
+        if nargin == 1; dim = find(d > 1,1,'first'); end
+            
+        r = sum(reshape([q.r],d),dim);
+        i = sum(reshape([q.i],d),dim);
+        j = sum(reshape([q.j],d),dim);
+        k = sum(reshape([q.k],d),dim);
+        val = quaternion(r,i,j,k);
     end
 end
 
