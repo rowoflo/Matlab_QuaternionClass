@@ -589,7 +589,7 @@ methods (Access = public)
         end  
     end
     
-    function a = rdivide(a,b)
+    function a = mrdivide(a,b)
         % The "mrdivide" method overloads Matlab's built in "mrdivide"
         % (i.e. / ) function for quaternions.
         %
