@@ -293,14 +293,17 @@ methods (Access = public)
             case 'long'
                 space = '  ';
                 flag = '%.15f';
+                charPerCol = 39;
                 
             case 'shortE'
                 space = '   ';
                 flag = '%.4e';
+                charPerCol = 39;
                 
             case 'longE'
                 space = '      ';
                 flag = '%.15e';
+                charPerCol = 39;
                 
             case 'shortG'
                 space = '   ';
@@ -923,13 +926,31 @@ methods (Access = public)
             return;
         end
         
-        if nargin == 1; dim = find(d > 1,1,'first'); end
+        if nargin < 2; dim = find(d > 1,1,'first'); end
             
         r = sum(reshape([q.r],d),dim);
         i = sum(reshape([q.i],d),dim);
         j = sum(reshape([q.j],d),dim);
         k = sum(reshape([q.k],d),dim);
         val = quaternion(r,i,j,k);
+    end
+    
+    function val = var(q,w,dim)
+        d = size(q);
+        if prod(d) == 1
+            val = quaternion(0,0,0,0);
+            return;
+        end
+        
+        if nargin < 2; w = 0; end
+        if nargin < 3; dim = find(d > 1,1,'first'); end
+            
+        r = var(reshape([q.r],d),w,dim);
+        i = var(reshape([q.i],d),w,dim);
+        j = var(reshape([q.j],d),w,dim);
+        k = var(reshape([q.k],d),w,dim);
+        val = quaternion(r,i,j,k);
+        
     end
 end
 
