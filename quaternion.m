@@ -936,6 +936,27 @@ methods (Access = public)
     end
     
     function val = var(q,w,dim)
+        % The "var" method overloads Matlab's built in "var" function for
+        % quaternions.
+        %
+        % SYNTAX:
+        %   var(q,w,dim)
+        %
+        % INPUTS:
+        %   q - ( M x N x ... quaternion)
+        %       An instance of the "quaternion" class.
+        %
+        %   w - ( length must equal dim )
+        %       Weight vector
+        %
+        % OUTPUTS:
+        %   val - ( A x B x ... quaternion)
+        %       Variance of quaternions.
+        %
+        % NOTES:
+        %   This needs to be verified that it is correct!!!
+        %
+        %-----------------------------------------------------------------------
         d = size(q);
         if prod(d) == 1
             val = quaternion(0,0,0,0);
@@ -951,6 +972,78 @@ methods (Access = public)
         k = var(reshape([q.k],d),w,dim);
         val = quaternion(r,i,j,k);
         
+    end
+    
+    function M = matProdInertial(q)
+        % The "matProdInertial" method returns the matrix G for computing
+        % quaternion time derivative for an angular velocity in the
+        % inertial frame.
+        %
+        % SYNTAX:
+        %   M = q.matProdInertial
+        %
+        % INPUTS:
+        %   q - ( 1 x 1 quaternion)
+        %       An instance of the "quaternion" class.
+        %
+        % OUTPUTS:
+        %   M - ( 3 x 4)
+        %       Matrix product for inertial frame angular velocity.
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        
+        % Check arguments for errors
+        assert(numel(q) == 1,...
+            'quaternion:eq:q',...
+            'Input argument "q" must be a 1 x 1 "quaternion" object.')
+        
+        M = [ -q.i,  q.r, -q.k,  q.j;...
+              -q.j,  q.k,  q.r, -q.i;...
+              -q.k, -q.j,  q.i,  q.r];        
+    end
+    
+    function M = matProdBody(q)
+        % The "matProdBody" method returns the matrix G for computing
+        % quaternion time derivative for an angular velocity in the body
+        % frame.
+        %
+        % SYNTAX:
+        %   M = q.matProdBody
+        %
+        % INPUTS:
+        %   q - ( 1 x 1 quaternion)
+        %       An instance of the "quaternion" class.
+        %
+        % OUTPUTS:
+        %   M - ( 3 x 4)
+        %       Matrix product for body frame angular velocity.
+        %
+        % NOTES:
+        %
+        %-----------------------------------------------------------------------
+        
+        % Check arguments for errors
+        assert(numel(q) == 1,...
+            'quaternion:eq:q',...
+            'Input argument "q" must be a 1 x 1 "quaternion" object.')
+        
+        M = [ -q.i,  q.r,  q.k, -q.j;...
+              -q.j, -q.k,  q.r,  q.i;...
+              -q.k,  q.j, -q.i,  q.r];        
+    end
+    
+    function qDot = derivativeInertial(q,w)
+        % Not sure how this derivative can be used
+        E = q.matProdInertial;
+        qDot = quaternion(1/2*E'*w);
+    end
+    
+    function qDot = derivativeBody(q,w)
+        % Not sure how this derivative can be used
+        G = q.matProdInertial;
+        qDot = quaternion(1/2*G'*w);
     end
 end
 
@@ -1256,7 +1349,11 @@ methods (Static = true, Access = public)
             'quaternion:axis2quat:theta',...
             'Input argument "theta" must be a 1 x 1 real number.')
         
-        e = e / norm(e);
+        if norm(e) < eps
+            theta = 0;
+        else
+            e = e / norm(e);
+        end
         
         a = cos(theta/2);
         b = e(1)*sin(theta/2);
